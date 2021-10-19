@@ -1,0 +1,118 @@
+#!/bin/dash
+
+#if less than 2 arguments
+if [ $# -lt 2 ]; then
+	echo "girt-commit: error: no message"
+	exit 1
+fi
+
+#if 2 arguments but not -m for arg1
+if [ $# -eq 2 -a $1 != "-m" ]; then
+	echo "girt-commit: usage: girt-commit -m <message>"
+	exit 1
+else #arg1 is -m then arg 2 is message
+	message=$2
+fi
+
+#if 3 arguments
+if [ $# -eq 3 -a $1 != "-a" ]; then
+	echo "girt-commit: usage: girt-commit [-a] -m <message>"
+	exit 1
+elif [ $# -eq 3 -a $1 = "-a" ]; then
+	if [ $2 = "-m" ]; then
+		message=$3
+		curr_dir=`dirname $0`
+		for file in `ls $curr_dir`
+		do
+			if [ -e ".girt/index/$file" ]; then
+				cp "$file" ".girt/index/$file"
+			fi
+		done
+		for file in `ls .girt/index`
+		do
+			if [ ! -e $curr_dir/$file ]; then
+				cd .girt/index
+				rm $file
+				cd ../..
+			fi
+		done
+	fi
+fi
+
+empty=$(ls ".girt/commit-no")
+#if commit-no not empty, not first commit
+if [ "$empty" != "" ]; then
+	latest=`ls .girt/commit-no | sort -n -r 2> /dev/null | head -1`
+	counter=$(($latest + 1))
+	n_change=0
+	log="$counter $message"
+		
+	for file in `ls .girt/index`
+	do
+		#echo "$file"
+		if [ -f .girt/commit-no/$latest/$file ]; then
+			changes=$(diff -br "$file" .girt/commit-no/$latest/"$file")
+
+			if [ "$changes" != "" ]; then
+				n_change=$(($n_change + 1))
+			fi
+
+			cd .girt/commit-no
+
+			# first append of file
+			if [ ! -d $counter ]; then
+				mkdir $counter
+			fi
+			cd $counter
+			touch $file
+			cd ../../..
+			cp -r .girt/index/$file .girt/commit-no/$counter/$file
+		#newly added file, no previous commit
+		else
+			#echo 'new file'
+			n_change=$(($n_change + 1))
+			cd .girt/commit-no
+			if [ ! -d $counter ]; then
+				mkdir $counter
+			fi
+			cd $counter
+			touch $file
+			cd ../../..
+			cp -r .girt/index/$file .girt/commit-no/$counter/$file
+		fi
+	done
+	#echo "$n_change"
+
+	for i in "$(ls .girt/commit-no/$latest)"
+	do
+		if [ "$(ls .girt/index/$i 2>&1)" = "" ]
+		then
+			rm -f $i 2> /dev/null
+		fi
+	done
+	
+	#if there are changes
+	if [ "$n_change" != 0 ]; then
+		#cp -r .girt/index .girt/commit-no/$counter
+		sed -i "1s/^/$log\n/" .girt/logbook.txt
+		echo "Committed as commit $counter"
+		exit 1
+	else
+		echo "nothing to commit"
+		exit 1
+	fi
+else
+	log="0 $message"
+	f_changes=$(ls .girt/index)
+	if [ "$f_changes" != "" ]; then
+		cp -r .girt/index .girt/commit-no/0
+		sed -i "1s/^/$log/" .girt/logbook.txt
+		echo "Committed as commit 0"
+		exit 1
+	else
+		echo "nothing to commit"
+		exit 1
+	fi
+fi
+
+#referenced from own previous submission

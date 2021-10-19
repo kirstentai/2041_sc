@@ -1,0 +1,5 @@
+#!/bin/dash
+
+#prints every line for each commit made with [commit no] [message]
+
+cat .girt/logbook.txt

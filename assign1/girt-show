@@ -1,0 +1,32 @@
+#!/bin/dash
+
+if [ $# -ne 1 ]; then
+	echo "girt-show: usage: [commit]:filename"
+	exit 1
+fi
+
+file=$(echo $1 | cut -d':' -f2)
+ver=$(echo $1 | cut -d':' -f1)
+
+if [ "$ver" = "" ]; then
+    if [ -e .girt/index/$file ]; then
+        cat .girt/index/$file
+    else
+        echo "girt-show: error: '$file' not found in index"
+    fi
+else
+    if [ -e .girt/commit-no/$ver ]; then
+        if [ -e .girt/commit-no/$ver/$file ]; then
+		cat .girt/commit-no/$ver/$file
+		#cat $file
+		#cat .girt/commit-no/$ver/$file 
+		#cd ../../..
+        else
+            echo "girt-show: error: '$file' not found in commit $ver"
+        fi
+    else
+        echo "girt-show: error: unknown commit '$ver'"
+    fi
+fi
+
+#referenced from own previous submission
