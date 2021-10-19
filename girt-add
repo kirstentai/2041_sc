@@ -1,0 +1,37 @@
+#!/bin/dash
+
+
+if [ -d ".girt" ]; then
+	continue
+else
+	echo "girt-add: error: girt repository directory .girt not found"
+	exit 1	
+fi
+
+cd .girt
+
+if [ ! -d "index" ]; then
+	mkdir index
+	#continue
+fi
+
+cd ..
+
+
+for file in "$@"
+do
+	if [ -f "$file" ]; then
+		cp "$file" ".girt/index/$file"
+	else
+		cd .girt/index
+		if [ -f $file ]; then
+			rm $file
+			cd ../..
+		else
+			echo "girt-add: error: can not open '$file'"
+			exit 1
+		fi
+	fi
+done
+
+
